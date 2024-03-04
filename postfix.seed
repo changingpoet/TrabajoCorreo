@@ -1,0 +1,2 @@
+postfix postfix/main_mailer_type select Local only
+postfix postfix/mailname string pedo.com

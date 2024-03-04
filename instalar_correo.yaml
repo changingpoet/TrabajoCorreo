@@ -1,0 +1,36 @@
+- name: Instalar herramientas
+  hosts: webservers
+  become: yes
+  
+  tasks:
+    - name: Instalar Postfix
+      apt:
+        name: postfix
+        state: present
+
+    - name: Instalar Dovecot
+      apt:
+        name: dovecot-core
+        state: present
+
+    - name: Instalar paquetes adicionales de Dovecot
+      apt:
+        name: dovecot-imapd
+        state: present
+
+    - name: Instalar paquetes adicionales de Dovecot
+      apt:
+        name: dovecot-pop3d
+        state: present
+
+    - name: Reiniciar servicio de Postfix
+      systemd:
+        name: postfix
+        state: restarted
+        enabled: yes
+
+    - name: Reiniciar servicio de Dovecot
+      systemd:
+        name: dovecot
+        state: restarted
+        enabled: yes

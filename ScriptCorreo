@@ -1,0 +1,256 @@
+#!/bin/bash
+if [ $# -eq 1 ] && [ $1 == "Estado" ];then
+	sudo systemctl status postfix
+        sudo systemctl status dovecot
+	sudo lsof -i :25
+        sudo lsof -i :143
+elif [ $# -eq 1 ] && [ $1 == "start" ];then
+	sudo systemctl start postfix dovecot
+elif [ $# -eq 1 ] && [ $1 == "stop" ];then
+        sudo systemctl stop postfix dovecot
+elif [ $# -eq 1 ] && [ $1 == "install" ];then
+        domin=$(grep ".com" postfix.seed |cut -d " " -f 4)
+        read -p "Escribe un dominio: " dom
+        sudo sed -i "s/$domin/$dom/g" postfix.seed
+        sudo debconf-set-selections < postfix.seed
+        sudo apt install -y postfix
+        sudo apt install dovecot-core dovecot-imapd dovecot-pop3d
+elif [ $# -eq 1 ] && [ $1 == "uninstall" ];then
+	sudo apt remove --purge postfix dovecot-core dovecot-imapd dovecot-pop3d
+else
+
+while (( opc != 8 ))
+do
+
+
+echo " "
+
+
+
+echo "  __________________________ "
+
+echo " |                          | "
+
+echo " |   MENÚ                   | "
+
+echo " |                          |  "
+
+echo " |                          |  "
+
+echo " | 1º Ver Datos de red      |  "
+
+echo " |                          |  "
+
+echo " | 2º Estado del servicio   |  " 
+
+echo " |                          |  "
+
+echo " | 3º Instalar el servicio  |  "
+
+echo " |                          |"
+
+echo " | 4º Eliminar el servicio  |"
+
+echo " |                          |"
+
+echo " | 5º Encender el servicio  |"  
+
+echo " |                          |"
+
+echo " | 6º Parar el servicio     |"    
+
+echo " |                          |"
+
+echo " | 7º Editar la conf        |"
+
+echo " |                          |"
+
+echo " | 8º Salir del programa    |"
+
+echo " |                          |"
+
+read -p " | Opción ----------------------> " opc
+
+echo " |__________________________|   "
+
+
+        case $opc in
+
+                1)
+                        loop=$(ip -c a | grep "inet" | grep "lo$" | cut -d " " -f 6)
+                        ipp=$(ip -c a | grep "inet" | grep "enp0s3$" | cut -d " " -f 6)
+                        gate=$(ip route | grep "default" | cut -d " " -f 3)
+                        echo " "
+                        echo " "
+                        echo "Ip loopback: $loop"
+                        echo " "
+                        echo "Ip de la red: $ipp"
+                        echo " "
+                        echo "Puerta de enlace: $gate"
+                ;; 
+
+                2)
+                        echo " 1º Para comprobación normal"
+                        echo " "
+                        echo " 2º Para comprobar con docker"	
+			echo " "
+                        read -p "Opción: " sta
+
+                        case $sta in
+
+                        1)
+                                sudo systemctl status postfix
+                                sudo systemctl status dovecot
+                        ;;
+                        2)
+                                sudo lsof -i :25
+                                sudo lsof -i :143
+                        ;;
+                        *)
+                                echo "No es ninguna opción"
+                        ;;
+                        esac
+                ;;
+
+                3)
+                        echo " 1º Instalacion simple"
+                        echo " "
+                        echo " 2º Ansible"
+                        echo " "
+                        echo " 3º Docker"
+                        echo " "
+                        read -p "Elige una opción: " op
+                        case $op in
+                        1)
+                                domin=$(grep ".com" postfix.seed |cut -d " " -f 4)
+                                read -p "Escribe un dominio: " dom
+                                sudo sed -i "s/$domin/$dom/g" postfix.seed
+				sudo debconf-set-selections < postfix.seed
+                                sudo apt install -y postfix
+                                sudo apt install dovecot-core dovecot-imapd dovecot-pop3d
+                        ;;
+                        2)
+
+                                ansible-playbook -v instalar_correo.yaml --extra-vars "ansible_sudo_pass=1234"
+
+                        ;;
+
+                        3)
+
+                                sudo docker start modest_jemison
+
+                        ;;
+                        *)
+                                echo "No es ninguna opción"
+                        ;;
+                        esac
+
+                ;;
+
+
+                4)
+
+                        sudo apt remove --purge postfix dovecot-core dovecot-imapd dovecot-pop3d
+
+                ;;
+
+                5)
+			echo " 1º Encender normal "
+			echo " "
+			echo " 2º Encender Docker "
+			echo " "
+			read -p "Elige opción: " start
+			case $start in
+			1)
+                        	sudo systemctl start postfix dovecot
+			;;
+			2)
+				sudo docker start modest_jemison
+			;;
+			esac
+                ;;
+
+                6)
+
+
+			echo " 1º Para parar normal"
+                        echo " "
+                        echo " 2º Para parar con docker"
+                        echo " "
+                        read -p "Opción: " stp
+
+                        case $stp in
+
+                        1)
+                                sudo systemctl stop postfix
+                                sudo systemctl stop dovecot
+                        ;;
+                        2)
+                                sudo docker stop modest_jemison
+                        ;;
+                        *)
+                                echo "No es ninguna opción"
+                        ;;
+                        esac
+
+
+                ;;
+
+                7)
+                        echo " 1º Cambiar la ip del equipo"
+                        echo " "
+                        echo " 2º Cambiar la gateway del equipo"
+                        echo " "
+			echo " 3º Cambiar el dominio "
+			echo " "
+                        echo " 4º  Salir"
+                        echo " "
+                        read -p "Elige opción: " chng
+                        case $chng in
+
+			1)
+                                ipant=$(grep "-" /etc/netplan/01-network-manager-all.yaml | cut -d " " -f 10)
+                                read -p "Escribe la nueva ip (ip/mascara): " ipnew
+                                sudo sed -i "s/$ipant/ipnew/g" /etc/netplan/01-network-manager-all.yaml
+                                sudo netplan apply
+                        ;;
+                        2)
+                                gatold=$(grep "gateway" /etc/netplan/01-network-manager-all.yaml | cut -d " " -f 8)
+                                read -p "Escribe la nueva gateway: " gatnew
+                                sudo sed -i "s/$gatold/$gatnew/g" /etc/netplan/01-network-manager-all.yaml
+                                sudo netplan apply
+                        ;;
+			3)
+
+
+				domin=$(grep -E "^myhostname" /etc/postfix/main.cf | cut -d " " -f 3)
+				read -p "Introduce nuevo dominio: " dominnew
+				sudo sed -i "s/$domin/$dominnew/g" /etc/postfix/main.cf
+
+			;;
+                        *)
+                                echo ""
+                        ;;
+                        esac
+                ;;
+                8)
+
+                        echo "Adios"
+
+                ;;
+
+
+                *)
+
+                        echo "No es ninguna opción"
+
+                ;;
+
+
+
+        esac
+
+
+done
+
+fi
